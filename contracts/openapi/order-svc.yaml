@@ -1,0 +1,27 @@
+openapi: 3.0.3
+info: { title: order-svc, version: 1.0.0 }
+paths:
+  /orders:
+    post:
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customerId, currency, lines]
+              properties:
+                customerId: { type: string }
+                currency: { type: string }
+                lines:
+                  type: array
+                  items:
+                    type: object
+                    required: [sku, qty]
+                    properties:
+                      sku: { type: string }
+                      qty: { type: number, minimum: 1 }
+                      unitPrice: { type: number, minimum: 0 }
+      responses:
+        '201': { description: created }

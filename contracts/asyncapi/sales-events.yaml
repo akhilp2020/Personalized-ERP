@@ -1,0 +1,13 @@
+asyncapi: 2.6.0
+info: { title: sales-events, version: 1.0.0 }
+channels:
+  sales.order.created.v1:
+    publish:
+      message:
+        name: OrderCreatedV1
+        payload:
+          type: object
+          required: [tenantId, orderId]
+          properties:
+            tenantId: { type: string }
+            orderId: { type: string }

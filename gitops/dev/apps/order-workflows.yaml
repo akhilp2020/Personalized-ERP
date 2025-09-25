@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: order-workflows, namespace: dev }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: order-workflows } }
+  template:
+    metadata: { labels: { app: order-workflows } }
+    spec:
+      containers:
+      - name: worker
+        image: order-workflows:dev
+        env:
+        - { name: TEMPORAL_ADDRESS, value: "temporal-frontend.dev.svc.cluster.local:7233" }
+        - { name: OTEL_EXPORTER_OTLP_ENDPOINT, value: "http://otel-collector.dev.svc.cluster.local:4318" }

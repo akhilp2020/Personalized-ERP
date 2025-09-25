@@ -1,0 +1,1 @@
+{ "name":"order-workflows","version":"0.1.0","main":"src/worker.js","type":"commonjs","scripts":{"start":"node src/worker.js"} }

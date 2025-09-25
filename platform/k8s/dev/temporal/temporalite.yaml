@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: temporalite }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: temporalite } }
+  template:
+    metadata: { labels: { app: temporalite } }
+    spec:
+      containers:
+      - name: temporalite
+        image: temporalio/temporalite:latest
+        args: ["start","--headless","--namespace","default"]
+        ports: [{containerPort: 7233, name: tgrpc}]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: temporal-frontend }
+spec:
+  selector: { app: temporalite }
+  ports: [{ name: tgrpc, port: 7233, targetPort: 7233 }]
