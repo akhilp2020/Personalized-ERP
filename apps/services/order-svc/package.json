@@ -12,6 +12,7 @@
     "@opentelemetry/sdk-node": "^0.205.0",
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "kafkajs": "^2.2.4"
+    "kafkajs": "^2.2.4",
+    "pg": "^8.16.3"
   }
 }
