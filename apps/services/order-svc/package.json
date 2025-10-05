@@ -10,6 +10,7 @@
     "@opentelemetry/auto-instrumentations-node": "^0.64.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.205.0",
     "@opentelemetry/sdk-node": "^0.205.0",
+    "cors": "^2.8.5",
     "express": "^4.19.2",
     "kafkajs": "^2.2.4"
   }

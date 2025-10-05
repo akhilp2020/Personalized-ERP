@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Personalized ERP – Order Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+    h1 { margin-bottom: 8px; }
+    .card { max-width: 560px; padding: 16px 20px; border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 1px 6px rgba(0,0,0,.05); }
+    label { display:block; margin-top:10px; font-weight:600; }
+    input, select { width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; margin-top:6px; }
+    .row { display:flex; gap:12px; }
+    .row > div { flex:1; }
+    button { margin-top:16px; padding:10px 14px; border:0; background:#111; color:#fff; border-radius:10px; cursor:pointer; }
+    .ok { color:#0a7a2f; font-weight:600; }
+    .err { color:#b00020; font-weight:600; }
+    pre { background:#f7f7f7; padding:12px; border-radius:8px; overflow:auto; }
+    small { color:#555; }
+  </style>
+</head>
+<body>
+  <h1>Order Demo</h1>
+  <p><small>Create an order and see it flow through the platform.</small></p>
+
+  <div class="card">
+    <label>Customer ID <input id="customerId" value="cust-1001"/></label>
+    <div class="row">
+      <div><label>Currency
+        <select id="currency">
+          <option>USD</option><option>EUR</option><option>INR</option>
+        </select></label>
+      </div>
+      <div><label>Tenant (header) <input id="tenant" value="tenant1"/></label></div>
+    </div>
+    <h3>Line item</h3>
+    <div class="row">
+      <div><label>SKU <input id="sku" value="BRAKE-PAD-XL"/></label></div>
+      <div><label>Qty <input id="qty" type="number" value="2"/></label></div>
+      <div><label>Unit Price <input id="unitPrice" type="number" value="49.99"/></label></div>
+    </div>
+    <button id="createBtn">Create Order</button>
+    <div id="status"></div>
+    <pre id="out" hidden></pre>
+  </div>
+
+  <script>
+    const svc = 'http://localhost:8088'; // port-forward to order-svc
+    const $ = id => document.getElementById(id);
+    $('createBtn').onclick = async () => {
+      const payload = {
+        customerId: $('customerId').value,
+        currency: $('currency').value,
+        lines: [{
+          sku: $('sku').value,
+          qty: Number($('qty').value),
+          unitPrice: Number($('unitPrice').value)
+        }]
+      };
+      $('status').className=''; $('status').textContent='Submitting…';
+      $('out').hidden = true;
+      try {
+        const r = await fetch(svc + '/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type':'application/json',
+            'X-Tenant-Id': $('tenant').value
+          },
+          body: JSON.stringify(payload)
+        });
+        const j = await r.json();
+        if (r.ok) {
+          $('status').className='ok';
+          $('status').textContent='Order created!';
+        } else {
+          $('status').className='err';
+          $('status').textContent='Error ' + r.status;
+        }
+        $('out').hidden = false;
+        $('out').textContent = JSON.stringify(j, null, 2);
+      } catch (e) {
+        $('status').className='err';
+        $('status').textContent='Request failed – check port-forward?';
+      }
+    };
+  </script>
+</body>
+</html>
