@@ -1,27 +1,96 @@
 openapi: 3.0.3
-info: { title: order-svc, version: 1.0.0 }
+info:
+  title: order-svc
+  version: 1.1.0
 paths:
   /orders:
     post:
+      summary: Create a new order for the current tenant.
       operationId: createOrder
+      parameters:
+        - in: header
+          name: X-Tenant-Id
+          description: Optional tenant identifier. Defaults to `tenant1` when omitted.
+          schema: { type: string }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [customerId, currency, lines]
-              properties:
-                customerId: { type: string }
-                currency: { type: string }
-                lines:
-                  type: array
-                  items:
-                    type: object
-                    required: [sku, qty]
-                    properties:
-                      sku: { type: string }
-                      qty: { type: number, minimum: 1 }
-                      unitPrice: { type: number, minimum: 0 }
+              $ref: '#/components/schemas/CreateOrderRequest'
+            example:
+              customerId: C567
+              currency: USD
+              lines:
+                - { sku: BRAKE-PAD-XL, qty: 2, unitPrice: 49.99 }
+                - { sku: ROTOR-STD, qty: 1, unitPrice: 89.5 }
       responses:
-        '201': { description: created }
+        '201':
+          description: Order accepted and published.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateOrderResponse'
+              example:
+                ok: true
+                orderId: o-1712345678901
+                received:
+                  customerId: C567
+                  currency: USD
+                  lines:
+                    - { sku: BRAKE-PAD-XL, qty: 2, unitPrice: 49.99 }
+                    - { sku: ROTOR-STD, qty: 1, unitPrice: 89.5 }
+        '500':
+          description: Database failure while persisting the order.
+  /orders/recent:
+    get:
+      summary: List the most recent orders (up to 20).
+      operationId: listRecentOrders
+      responses:
+        '200':
+          description: Recent orders in descending creation order.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderSummary'
+              example:
+                - { order_id: o-1712345678901, customer_id: C567, total_amount: 189.48, currency: USD, created_at: '2025-10-06 17:24:32' }
+                - { order_id: o-1712345600001, customer_id: C200, total_amount: 29.97, currency: USD, created_at: '2025-10-06 17:24:10' }
+components:
+  schemas:
+    OrderLine:
+      type: object
+      required: [sku, qty, unitPrice]
+      properties:
+        sku: { type: string }
+        qty: { type: number, minimum: 1 }
+        unitPrice: { type: number, minimum: 0 }
+    CreateOrderRequest:
+      type: object
+      required: [customerId, currency, lines]
+      properties:
+        customerId: { type: string }
+        currency: { type: string }
+        lines:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/OrderLine' }
+    CreateOrderResponse:
+      type: object
+      required: [ok, orderId, received]
+      properties:
+        ok: { type: boolean, const: true }
+        orderId: { type: string }
+        received:
+          $ref: '#/components/schemas/CreateOrderRequest'
+    OrderSummary:
+      type: object
+      required: [order_id, customer_id, total_amount, currency, created_at]
+      properties:
+        order_id: { type: string }
+        customer_id: { type: string }
+        total_amount: { type: string, pattern: '^\d+(\.\d{1,2})?$' }
+        currency: { type: string }
+        created_at: { type: string, description: ISO-8601 timestamp string }
