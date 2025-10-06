@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Show Orders</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+    h1 { margin-bottom: 8px; }
+    a { text-decoration: none; color: #0a58ca; }
+    .actions { margin: 12px 0 20px; display:flex; gap:12px; align-items:center; }
+    button { padding:10px 14px; border:0; background:#111; color:#fff; border-radius:10px; cursor:pointer; }
+    table { border-collapse: collapse; width: 100%; max-width: 880px; }
+    th, td { border: 1px solid #ddd; padding: 8px 10px; }
+    th { background: #f4f6f8; text-align: left; }
+    .muted { color:#666; }
+  </style>
+</head>
+<body>
+  <h1>Orders</h1>
+  <div class="actions">
+    <button id="refreshBtn">Refresh</button>
+    <a href="./index.html">← Back to Create Order</a>
+    <span id="status" class="muted"></span>
+  </div>
+
+  <table id="ordersTbl">
+    <thead>
+      <tr>
+        <th>Order ID</th>
+        <th>Customer</th>
+        <th>Total</th>
+        <th>Currency</th>
+        <th>Created At</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const API = 'http://localhost:8088/orders/recent';
+    const $ = sel => document.querySelector(sel);
+    const tbody = $('#ordersTbl tbody');
+    const statusEl = $('#status');
+
+    async function load() {
+      statusEl.textContent = 'Loading…';
+      tbody.innerHTML = '';
+      try {
+        const r = await fetch(API);
+        const data = await r.json();
+        if (!Array.isArray(data)) throw new Error('Unexpected response');
+        for (const row of data) {
+          const tr = document.createElement('tr');
+          const link = document.createElement('a');
+          link.href = './index.html';
+          link.textContent = row.order_id || '(unknown)';
+          const td0 = document.createElement('td'); td0.appendChild(link); tr.appendChild(td0);
+          const td1 = document.createElement('td'); td1.textContent = row.customer_id || ''; tr.appendChild(td1);
+          const td2 = document.createElement('td'); td2.textContent = row.total_amount ?? ''; tr.appendChild(td2);
+          const td3 = document.createElement('td'); td3.textContent = row.currency || ''; tr.appendChild(td3);
+          const td4 = document.createElement('td'); td4.textContent = row.created_at || ''; tr.appendChild(td4);
+          tbody.appendChild(tr);
+        }
+        statusEl.textContent = data.length ? `${data.length} rows` : 'No orders yet.';
+      } catch (e) {
+        statusEl.textContent = 'Failed to load orders. Is port-forward up?';
+      }
+    }
+    document.getElementById('refreshBtn').onclick = load;
+    load();
+  </script>
+</body>
+</html>
