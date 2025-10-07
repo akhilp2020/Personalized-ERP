@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - postgres
   - redpanda
+  - redpanda/console.yaml
   - apicurio
   - temporal
   - unleash

@@ -26,13 +26,13 @@ app.post('/orders', async (req, res) => {
     await client.query('BEGIN');
 
     await client.query(
-      `INSERT INTO orders(tenant_id, order_id, customer_id, status, currency, total_amount, payload)
+      `INSERT INTO order_header(tenant_id, order_id, customer_id, status, currency, total_amount, payload)
        VALUES ($1,$2,$3,$4,$5,$6,$7)` ,
       [tenantId, orderId, payload.customerId || 'UNKNOWN', 'NEW', payload.currency || 'USD', total, payload]
     );
 
     await client.query(
-      `INSERT INTO order_items(tenant_id, order_id, line_no, sku, qty, unit_price, payload)
+      `INSERT INTO order_item(tenant_id, order_id, line_no, sku, qty, unit_price, payload)
        SELECT $1, $2, (row_number() OVER (ORDER BY 1))::int,
               (elem->>'sku')::text,
               (elem->>'qty')::numeric,
@@ -58,9 +58,30 @@ app.post('/orders', async (req, res) => {
 app.get('/orders/recent', async (_req, res) => {
   try {
     const result = await pool.query(
-      "SELECT order_id, customer_id, total_amount, currency, to_char(created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at FROM orders ORDER BY created_at DESC LIMIT 20"
+      "SELECT order_id, customer_id, total_amount, currency, to_char(created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at FROM order_header ORDER BY created_at DESC LIMIT 20"
     );
     res.json(result.rows);
+  } catch (err) {
+    console.error('db query failed', err);
+    res.status(500).json({ ok: false, error: 'db_query_failed' });
+  }
+});
+
+app.get('/orders/:orderId', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const headerResult = await pool.query(
+      "SELECT order_id, customer_id, status, currency, total_amount, to_char(created_at,'YYYY-MM-DD HH24:MI:SS') AS created_at FROM order_header WHERE order_id = $1",
+      [orderId]
+    );
+    if (headerResult.rows.length === 0) {
+      return res.status(404).json({ ok: false, error: 'order_not_found' });
+    }
+    const itemsResult = await pool.query(
+      "SELECT line_no, sku, qty, unit_price, line_amount FROM order_item WHERE order_id = $1 ORDER BY line_no",
+      [orderId]
+    );
+    res.json({ ...headerResult.rows[0], items: itemsResult.rows });
   } catch (err) {
     console.error('db query failed', err);
     res.status(500).json({ ok: false, error: 'db_query_failed' });

@@ -1,0 +1,56 @@
+version: 1
+service: order-svc
+summary: >
+  Order API service. Persists orders to Postgres (normalized header+items), emits sales.order.created.v1, traces via OTel.
+files:
+  - apps/services/order-svc/src/**/*.js
+  - apps/services/order-svc/migrations/**/*.sql
+  - contracts/openapi/order-svc.yaml
+  - contracts/asyncapi/sales-events.yaml
+interfaces:
+  http:
+    - method: POST
+      path: /orders
+      description: Create new order with line items
+    - method: GET
+      path: /orders/:orderId
+      description: Fetch single order with items
+    - method: GET
+      path: /orders/recent
+      description: List last 20 orders (headers only)
+events:
+  emits:
+    - sales.order.created.v1
+storage:
+  postgres:
+    tables:
+      - name: order_header
+        fields: [order_id, tenant_id, customer_id, status, currency, order_date, total_amount, payload, created_at, updated_at]
+        pk: order_id
+        indexes: [tenant_id, customer_id, created_at]
+      - name: order_item
+        fields: [order_item_id, order_id, tenant_id, line_no, sku, product_id, qty, unit_price, line_amount, payload, created_at]
+        pk: order_item_id
+        fk: [order_id -> order_header.order_id]
+        indexes: [order_id, tenant_id, sku]
+        computed: [line_amount = qty * unit_price]
+    relationships:
+      - from: order_header
+        to: order_item
+        type: one_to_many
+        via: order_id
+observability:
+  traces: otel:order-svc
+  metrics: prometheus:order-svc
+contracts:
+  openapi:
+    artifactId: order-svc
+    groupId: default
+  asyncapi:
+    artifactId: sales-events
+    groupId: default
+notes:
+  - "@kg: writes pg.order_header, pg.order_item; @kg: emits sales.order.created.v1"
+  - "Migration 001: Normalized order schema (header + items)"
+  - "FK constraint ensures order_item.order_id references order_header.order_id"
+  - "Computed column line_amount = qty * unit_price (stored)"

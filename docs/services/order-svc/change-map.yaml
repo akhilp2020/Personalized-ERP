@@ -1,0 +1,73 @@
+version: 1
+patterns:
+
+  endpoint_addition:
+    get_single_order:
+      description: "Fetch order by ID with embedded items (normalized)"
+      likely_files:
+        - apps/services/order-svc/src/index.js
+      changed_in_migration: 001_split_order_tables
+      rationale: "New endpoint to support header+items join query"
+
+    get_recent_orders:
+      description: "List last 20 orders (header fields only)"
+      likely_files:
+        - apps/services/order-svc/src/index.js
+        - apps/demos/order-ui/show.html
+      changed_in_migration: 001_split_order_tables
+      rationale: "Updated to query order_header instead of orders view"
+      tests:
+        - tests/order-svc/*recent*
+
+  field_addition:
+    order_header_field:
+      description: "New field on order header (e.g., ship_date, notes)"
+      likely_files:
+        - apps/services/order-svc/migrations/*order_header*.sql
+        - apps/services/order-svc/src/index.js
+        - contracts/openapi/order-svc.yaml
+      rationale: "Add column to order_header, update INSERT/SELECT"
+
+    order_item_field:
+      description: "New field on order line items (e.g., discount_pct, tax_amount)"
+      likely_files:
+        - apps/services/order-svc/migrations/*order_item*.sql
+        - apps/services/order-svc/src/index.js
+        - contracts/openapi/order-svc.yaml
+      rationale: "Add column to order_item, update INSERT/SELECT in POST /orders"
+
+  event_emission:
+    sales_order_created:
+      description: "Publish event after successful order write"
+      likely_files:
+        - apps/services/order-svc/src/index.js
+        - contracts/asyncapi/sales-events.yaml
+      rationale: "Fire-and-forget Kafka publish on line 47"
+
+  db_change:
+    add_header_column:
+      description: "Promote a hot JSON path to a dedicated column in order_header"
+      likely_files:
+        - apps/services/order-svc/migrations/*order_header*.sql
+        - apps/services/order-svc/src/index.js
+      rationale: "Add migration with ALTER TABLE, backfill, update app queries"
+
+    add_item_column:
+      description: "Add new column to order_item (e.g., product_id, tax_rate)"
+      likely_files:
+        - apps/services/order-svc/migrations/*order_item*.sql
+        - apps/services/order-svc/src/index.js
+      rationale: "Add migration with ALTER TABLE, update INSERT logic in POST /orders"
+
+    split_order_normalization:
+      description: "Migration 001: Split legacy order table into order_header + order_item"
+      likely_files:
+        - apps/services/order-svc/migrations/001_split_order_tables.sql
+        - apps/services/order-svc/src/index.js
+      rationale: "Normalize schema, add FK constraints, create compatibility views"
+      changed_files:
+        - apps/services/order-svc/migrations/001_split_order_tables.sql (new)
+        - apps/services/order-svc/src/index.js (updated INSERT/SELECT)
+        - apps/services/order-svc/src/index.test.js (new tests)
+        - docs/services/order-svc/kg.yaml (updated schema graph)
+        - docs/services/order-svc/adr/0001-contract-first.md (added migration plan)

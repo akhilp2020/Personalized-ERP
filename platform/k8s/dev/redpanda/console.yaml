@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redpanda-console-config
+  namespace: dev
+data:
+  console.yaml: |
+    kafka:
+      brokers:
+        - redpanda.dev.svc.cluster.local:9092
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redpanda-console
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redpanda-console
+  template:
+    metadata:
+      labels:
+        app: redpanda-console
+    spec:
+      containers:
+        - name: console
+          image: redpandadata/console:latest
+          args:
+            - "--config.filepath=/etc/redpanda/console/console.yaml"
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: console-config
+              mountPath: /etc/redpanda/console
+      volumes:
+        - name: console-config
+          configMap:
+            name: redpanda-console-config
+            items:
+              - key: console.yaml
+                path: console.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redpanda-console
+  namespace: dev
+spec:
+  selector:
+    app: redpanda-console
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
