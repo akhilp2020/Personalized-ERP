@@ -1,0 +1,11 @@
+# Git Configuration for Personalized ERP
+# This file documents the preferred git settings for this repository
+
+[user]
+	name = Akhil Pandey
+	email = akhilp2020@gmail.com
+
+[commit]
+	# Do not add AI co-authorship attributions
+	# All commits should be attributed solely to the repository owner
+	gpgsign = false
