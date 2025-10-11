@@ -1,0 +1,105 @@
+version: 1
+service: ext-svc
+summary: >
+  Extension service for managing safe, backward-compatible extensions to microservices.
+  Validates contracts, generates migrations, creates code artifacts, runs tests, and manages
+  extension lifecycle from draft to deployment.
+
+files:
+  - apps/services/ext-svc/src/**/*.js
+  - docs/services/ext-svc/**/*.yaml
+  - docs/services/*/extension-guide.yaml
+
+interfaces:
+  http:
+    - method: POST
+      path: /extensions/drafts
+      description: Create extension draft
+    - method: GET
+      path: /extensions/drafts
+      description: List extension drafts
+    - method: GET
+      path: /extensions/drafts/:id
+      description: Get specific draft
+    - method: POST
+      path: /extensions/drafts/:id/validate
+      description: Validate contract compatibility and storage
+    - method: POST
+      path: /extensions/drafts/:id/generate
+      description: Generate code artifacts
+    - method: POST
+      path: /extensions/drafts/:id/test
+      description: Run tagged tests
+    - method: POST
+      path: /extensions/drafts/:id/approve
+      description: Approve for deployment
+    - method: POST
+      path: /extensions/drafts/:id/deploy
+      description: Mark as deployed
+    - method: POST
+      path: /extensions/drafts/:id/rollback
+      description: Rollback extension
+    - method: GET
+      path: /extensions/qa/:draftId
+      description: Interactive Q&A for requirements
+
+events:
+  emits: []
+  subscribes: []
+
+storage:
+  inmemory:
+    description: Extension drafts stored in-memory Map (replace with DB in production)
+    entities:
+      - ExtensionDraft
+
+dependencies:
+  internal:
+    - target services (order-svc, etc.) for testing
+  external:
+    - PostgreSQL (via pg) for storage validation
+    - OpenAPI/AsyncAPI contracts in contracts/ directory
+
+components:
+  guards:
+    - ContractGuard: Validates backward compatibility against OpenAPI/AsyncAPI
+    - StorageGuard: Validates JSONB storage readiness, generates migrations
+
+  generators:
+    - CodeGenerator: Generates AJV/Zod validators, UI fragments, tests, docs
+
+  runners:
+    - TestRunner: Executes tagged tests for extensions
+
+  models:
+    - ExtensionDraft: Core extension model with lifecycle states
+
+lifecycle_states:
+  - draft: Initial state after creation
+  - validated: Passed contract and storage validation
+  - testing: Tests are running or passed
+  - approved: Approved for deployment
+  - rejected: Validation or tests failed
+  - deployed: Extension is live
+  - rolled_back: Extension was rolled back
+
+observability:
+  traces: otel:ext-svc
+  metrics: prometheus:ext-svc
+  logs: console + otel-collector
+
+contracts:
+  openapi:
+    artifactId: ext-svc
+    groupId: default
+    description: Extension management API
+
+notes:
+  - "@kg: Manages extension lifecycle for all microservices"
+  - "@kg: Enforces backward compatibility via contract guard"
+  - "@kg: Generates JSONB migrations for storage"
+  - "@kg: All extensions must be tenant-scoped and feature-flagged"
+  - "@kg: JSONB-only storage model (no schema changes)"
+  - "Migration generator: Creates idempotent SQL for extensions column"
+  - "Code generator: AJV, Zod, React Hook Form, tests, docs"
+  - "Test runner: Executes @extension:{name} tagged tests"

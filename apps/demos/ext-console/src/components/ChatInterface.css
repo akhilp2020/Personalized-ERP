@@ -1,0 +1,317 @@
+.chat-interface {
+  display: flex;
+  gap: 24px;
+  height: calc(100vh - 180px);
+  padding: 24px;
+}
+
+.chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.message {
+  max-width: 70%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.message.user {
+  align-self: flex-end;
+  background: #3b82f6;
+  color: white;
+  margin-left: auto;
+}
+
+.message.assistant {
+  align-self: flex-start;
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.message.system {
+  align-self: center;
+  background: #fef3c7;
+  color: #92400e;
+  font-style: italic;
+  font-size: 14px;
+  max-width: 80%;
+}
+
+.message.loading {
+  opacity: 0.7;
+}
+
+.message-content {
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.message-timestamp {
+  font-size: 11px;
+  opacity: 0.6;
+  margin-top: 4px;
+}
+
+.chat-quick-chips {
+  display: flex;
+  gap: 8px;
+  padding: 12px 24px;
+  border-top: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+}
+
+.quick-chip {
+  padding: 6px 12px;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+  border-radius: 16px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quick-chip:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.chat-input {
+  display: flex;
+  gap: 8px;
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.chat-input input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.chat-input button {
+  padding: 10px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+
+.chat-input button:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.chat-input button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chat-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 24px;
+  background: #f3f4f6;
+  border-top: 1px solid #e5e7eb;
+  font-size: 13px;
+}
+
+.draft-id {
+  color: #6b7280;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.status-badge.collecting {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge.validating {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.ready_to_propose {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.contract_break {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-badge.proposed {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.plan-panel {
+  width: 400px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  overflow-y: auto;
+  animation: slideIn 0.3s ease-out;
+}
+
+.plan-panel.contract-break {
+  border: 2px solid #fee2e2;
+}
+
+.plan-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.plan-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #1f2937;
+}
+
+.plan-section {
+  margin-bottom: 20px;
+}
+
+.plan-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.plan-section ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.plan-section li {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.plan-section li.violation {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.plan-section p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.approve-button,
+.revise-button {
+  width: 100%;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 16px;
+}
+
+.approve-button {
+  background: #10b981;
+  color: white;
+}
+
+.approve-button:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.revise-button {
+  background: #f59e0b;
+  color: white;
+}
+
+.revise-button:hover {
+  background: #d97706;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}

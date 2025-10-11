@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ext-svc
+  namespace: dev
+  labels:
+    app: ext-svc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ext-svc
+  template:
+    metadata:
+      labels:
+        app: ext-svc
+    spec:
+      containers:
+      - name: ext-svc
+        image: ext-svc:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8090
+        env:
+        - name: PORT
+          value: "8090"
+        - name: PGHOST
+          value: "pg.dev.svc.cluster.local"
+        - name: PGPORT
+          value: "5432"
+        - name: PGUSER
+          value: "postgres"
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: pg-secret
+              key: POSTGRES_PASSWORD
+        - name: PGDATABASE
+          value: "postgres"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ext-svc
+  namespace: dev
+spec:
+  selector:
+    app: ext-svc
+  ports:
+  - protocol: TCP
+    port: 8090
+    targetPort: 8090

@@ -1,0 +1,75 @@
+version: 1
+patterns:
+
+  add_validation_rule:
+    contract_validation:
+      description: "Add new validation rule to contract guard"
+      likely_files:
+        - apps/services/ext-svc/src/guards/contract-guard.js
+      rationale: "Enhance backward compatibility checks"
+
+    storage_validation:
+      description: "Add storage validation check"
+      likely_files:
+        - apps/services/ext-svc/src/guards/storage-guard.js
+      rationale: "Ensure JSONB storage requirements"
+
+  add_generator:
+    new_artifact_type:
+      description: "Add new code generator (e.g., GraphQL, OpenAPI)"
+      likely_files:
+        - apps/services/ext-svc/src/generators/code-generator.js
+      rationale: "Expand artifact generation capabilities"
+
+  add_endpoint:
+    new_lifecycle_action:
+      description: "Add new extension lifecycle endpoint"
+      likely_files:
+        - apps/services/ext-svc/src/index.js
+        - apps/services/ext-svc/src/models/extension.js
+      rationale: "Extend extension management capabilities"
+
+  test_runner_enhancement:
+    new_test_framework:
+      description: "Support additional test framework (e.g., Vitest, Playwright)"
+      likely_files:
+        - apps/services/ext-svc/src/runners/test-runner.js
+      rationale: "Enable testing with different frameworks"
+
+  target_service_addition:
+    new_service_support:
+      description: "Add extension support for new microservice"
+      likely_files:
+        - docs/services/{new-service}/extension-guide.yaml
+        - apps/services/{new-service}/migrations/*_add_extensions_column.sql
+      rationale: "Enable extensions for additional services"
+
+  migration_generator_update:
+    new_index_type:
+      description: "Support different index types (GiST, BRIN, etc.)"
+      likely_files:
+        - apps/services/ext-svc/src/guards/storage-guard.js
+      rationale: "Optimize JSONB query performance"
+
+  contract_format_support:
+    new_contract_type:
+      description: "Support additional contract formats (GraphQL, gRPC)"
+      likely_files:
+        - apps/services/ext-svc/src/guards/contract-guard.js
+      rationale: "Validate against multiple contract types"
+
+  ui_generator_enhancement:
+    new_ui_framework:
+      description: "Generate UI components for different frameworks"
+      likely_files:
+        - apps/services/ext-svc/src/generators/code-generator.js
+      rationale: "Support Vue, Svelte, Angular, etc."
+
+  persistence_layer:
+    database_integration:
+      description: "Replace in-memory storage with PostgreSQL"
+      likely_files:
+        - apps/services/ext-svc/src/index.js
+        - apps/services/ext-svc/src/models/extension.js
+        - apps/services/ext-svc/migrations/001_ext_svc_tables.sql
+      rationale: "Persist extension drafts across restarts"

@@ -1,0 +1,240 @@
+version: 1
+service: order-svc
+description: Guide for extending order-svc with tenant-specific fields via JSONB extensions
+
+extension_architecture:
+  storage_model: jsonb_only
+  location: extensions column in order_header and order_item tables
+  feature_flags: ext_order_svc_{extension_name}
+  validation: ajv + zod schemas
+  backward_compatibility: required
+
+available_extension_points:
+  - entity: order_header
+    description: Order-level extension fields
+    examples:
+      - priority_level
+      - internal_notes
+      - custom_reference_number
+      - approval_workflow_id
+
+  - entity: order_item
+    description: Line item extension fields
+    examples:
+      - item_notes
+      - special_handling
+      - vendor_reference
+      - custom_attributes
+
+extension_lifecycle:
+  1_draft:
+    action: POST /extensions/drafts
+    description: Create extension draft with schema
+    payload:
+      tenantId: string (required)
+      targetService: order-svc
+      extensionName: string (required, kebab-case)
+      description: string
+      schema:
+        type: object
+        properties:
+          field_name:
+            type: string|number|boolean|array
+            description: field description
+            example: sample value
+    example:
+      tenantId: tenant1
+      targetService: order-svc
+      extensionName: priority-handling
+      description: Add priority level to orders for premium customers
+      schema:
+        type: object
+        properties:
+          priorityLevel:
+            type: string
+            enum: [standard, high, critical]
+            description: Order priority for fulfillment
+          estimatedDelivery:
+            type: string
+            format: date-time
+            description: Target delivery timestamp
+          premiumNotes:
+            type: string
+            maxLength: 500
+            description: Special handling instructions
+
+  2_validate:
+    action: POST /extensions/drafts/:id/validate
+    description: Validate contract compatibility and generate migrations
+    checks:
+      - backward_compatibility: No breaking changes to existing contracts
+      - storage_readiness: All tables have extensions column
+      - contract_guard: OpenAPI/AsyncAPI validation
+    outputs:
+      - validationResults
+      - impactReport
+      - migrations (if needed)
+
+  3_generate:
+    action: POST /extensions/drafts/:id/generate
+    description: Generate code artifacts
+    artifacts:
+      - ajv_validator: AJV validation schema
+      - zod_validator: Zod TypeScript schema
+      - ui_fragment: React Hook Form component
+      - test: Tagged test suite
+      - kg_update: Updated knowledge graph
+      - change_map_update: Updated change map
+
+  4_test:
+    action: POST /extensions/drafts/:id/test
+    description: Run tagged tests for extension
+    tag: "@extension:{extensionName}"
+    requirements:
+      - All tests pass
+      - No regressions in existing functionality
+      - Extension validation works correctly
+
+  5_approve:
+    action: POST /extensions/drafts/:id/approve
+    description: Approve extension for deployment
+    requirements:
+      - Tests passed
+      - Validation successful
+      - Impact report reviewed
+    payload:
+      approvedBy: string (required)
+
+  6_deploy:
+    action: POST /extensions/drafts/:id/deploy
+    description: Mark as deployed
+    steps:
+      - Apply database migration (if generated)
+      - Deploy updated service code
+      - Enable feature flag for tenant
+      - Monitor for errors
+
+  7_rollback:
+    action: POST /extensions/drafts/:id/rollback
+    description: Rollback extension
+    steps:
+      - Disable feature flag
+      - Remove extension data (optional)
+      - Revert code changes
+
+usage_example:
+  scenario: Add priority handling to orders
+  steps:
+    1_create_draft:
+      curl: |
+        curl -X POST http://localhost:8090/extensions/drafts \
+          -H "Content-Type: application/json" \
+          -d '{
+            "tenantId": "tenant1",
+            "targetService": "order-svc",
+            "extensionName": "priority-handling",
+            "description": "Add priority levels for premium customers",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "priorityLevel": {
+                  "type": "string",
+                  "enum": ["standard", "high", "critical"]
+                },
+                "estimatedDelivery": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
+            "createdBy": "admin@tenant1.com"
+          }'
+
+    2_validate:
+      curl: |
+        curl -X POST http://localhost:8090/extensions/drafts/{draftId}/validate
+
+    3_generate:
+      curl: |
+        curl -X POST http://localhost:8090/extensions/drafts/{draftId}/generate
+
+    4_test:
+      curl: |
+        curl -X POST http://localhost:8090/extensions/drafts/{draftId}/test
+
+    5_approve:
+      curl: |
+        curl -X POST http://localhost:8090/extensions/drafts/{draftId}/approve \
+          -H "Content-Type: application/json" \
+          -d '{"approvedBy": "manager@tenant1.com"}'
+
+    6_deploy:
+      curl: |
+        curl -X POST http://localhost:8090/extensions/drafts/{draftId}/deploy
+
+    7_use_extension:
+      curl: |
+        curl -X POST http://localhost:8088/orders \
+          -H "Content-Type: application/json" \
+          -H "x-tenant-id: tenant1" \
+          -d '{
+            "customerId": "premium-customer-123",
+            "currency": "USD",
+            "lines": [
+              {"sku": "WIDGET-A", "qty": 2, "unitPrice": 25.00}
+            ],
+            "extensions": {
+              "priorityHandling": {
+                "priorityLevel": "critical",
+                "estimatedDelivery": "2025-10-08T10:00:00Z"
+              }
+            }
+          }'
+
+constraints:
+  - name: backward_compatibility
+    rule: Extensions must not break existing API contracts
+    enforcement: Contract guard validates before approval
+
+  - name: optional_fields
+    rule: All extension fields must be optional
+    enforcement: Schema validation rejects required fields
+
+  - name: tenant_scoped
+    rule: Extensions are tenant-specific
+    enforcement: Feature flags control visibility
+
+  - name: jsonb_only
+    rule: Extensions stored only in JSONB columns
+    enforcement: Storage guard ensures extensions column exists
+
+  - name: feature_flagged
+    rule: All extensions behind feature flags
+    enforcement: Service code checks flags before processing
+
+best_practices:
+  - Use kebab-case for extension names
+  - Provide clear descriptions and examples in schema
+  - Add validation rules (min/max, patterns, enums)
+  - Test thoroughly before approval
+  - Document business purpose in description
+  - Use semantic field names
+  - Avoid deeply nested objects (keep flat)
+  - Version your extensions (v1, v2) for major changes
+
+troubleshooting:
+  validation_fails:
+    issue: Extension not backward compatible
+    solution: Review violations in impact report, remove required fields or breaking changes
+
+  tests_fail:
+    issue: Extension tests don't pass
+    solution: Review test logs, fix validation rules or test data
+
+  storage_not_ready:
+    issue: Tables missing extensions column
+    solution: Apply generated migration to add extensions column
+
+  feature_flag_not_working:
+    issue: Extension data not visible
+    solution: Enable feature flag for tenant, verify flag name matches pattern
